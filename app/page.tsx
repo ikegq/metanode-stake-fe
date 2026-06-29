@@ -1,65 +1,102 @@
-import Image from "next/image";
+'use client';
+
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
+import useRewards from '@/hooks/useRewards';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { motion } from 'framer-motion';
+import { useMemo, useState } from 'react';
+import { FiArrowDown, FiTrendingUp, FiZap } from 'react-icons/fi';
+import { Address, zeroAddress } from 'viem';
+import { useAccount, useBalance } from 'wagmi';
 
 export default function Home() {
+  const { address, isConnected } = useAccount();
+  const [amount, setAmount] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const { poolData } = useRewards();
+
+  const isEthPool = useMemo(() => {
+    const addr = poolData.stTokenAddress;
+    return !addr || addr === zeroAddress || addr === '0x0000000000000000000000000000000000000000';
+  }, [poolData.stTokenAddress]);
+
+  const { data: balance, refetch: refetchBalance } = useBalance({
+    address: address,
+    token: isEthPool ? undefined : (poolData.stTokenAddress as Address | undefined),
+    query: {
+      enabled: isConnected && (isEthPool || !!poolData.stTokenAddress),
+      refetchInterval: 10000,
+      refetchIntervalInBackground: false,
+    },
+  });
+
+  const handleStake = () => {};
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center mb-6">
+        <div className="inline-block mb-2">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+            className="w-24 h-24 rounded-full border-2 border-primary-500/20 flex items-center justify-center shadow-xl"
+            style={{ boxShadow: '0 0 60px 0 rgba(14,165,233,0.15)' }}>
+            <FiZap className="w-12 h-12 text-primary-500" />
+          </motion.div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent mb-2">MetaNode Stake</h1>
+        <p className="text-gray-400 text-xl">Stake ETH to earn tokens</p>
+      </motion.div>
+
+      {/* Stake Card */}
+      <Card className="min-h-[420px] p-4 sm:p-8 md:p-12 bg-gradient-to-br from-gray-800/80 to-gray-900/80 shadow-2xl border-primary-500/20 border-[1.5px] rounded-2xl sm:rounded-3xl">
+        <div className="space-y-8 sm:space-y-12">
+          {/* Staked Amount Display */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 p-4 sm:p-8 bg-gray-800/70 rounded-xl sm:rounded-2xl border border-gray-700/50 group-hover:border-primary-500/50 transition-colors duration-300 shadow-lg">
+            <div className="flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 bg-primary-500/10 rounded-full">
+              <FiTrendingUp className="w-8 h-8 sm:w-10 sm:h-10 text-primary-400" />
+            </div>
+            <div className="flex flex-col justify-center flex-1 min-w-0 items-center sm:items-start">
+              <span className="text-gray-400 text-base sm:text-lg mb-1">Staked Amount</span>
+              <span className="text-3xl sm:text-5xl sm:leading-none font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent leading-tight break-all">
+                {parseFloat(poolData.stTokenAmount || '0').toFixed(4)} {isEthPool ? 'ETH' : 'Token'}
+              </span>
+            </div>
+          </div>
+
+          {/* Input Field */}
+          <div className="space-y-4 sm:space-y-6">
+            <Input
+              label="Amount to Stake"
+              type="number"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              placeholder="0.0"
+              rightElement={<span className="text-gray-500">{isEthPool ? 'ETH' : 'Token'}</span>}
+              helperText={balance ? `Available: ${parseFloat(balance.formatted).toFixed(4)} ${isEthPool ? 'ETH' : 'Token'}` : undefined}
+              className="text-lg sm:text-xl py-3 sm:py-5"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+
+          {/* Stake Button */}
+          <div className="pt-4 sm:pt-8">
+            {!isConnected ? (
+              <div className="flex justify-center">
+                <div className="glow">
+                  <ConnectButton />
+                </div>
+              </div>
+            ) : (
+              <Button onClick={handleStake} disabled={loading || !amount} loading={loading} fullWidth className="py-3 sm:py-5 text-lg sm:text-xl">
+                <FiArrowDown className="w-6 h-6 sm:w-7 sm:h-7" />
+                <span>Stake {isEthPool ? 'ETH' : 'Token'}</span>
+              </Button>
+            )}
+          </div>
         </div>
-      </main>
+      </Card>
     </div>
   );
 }
