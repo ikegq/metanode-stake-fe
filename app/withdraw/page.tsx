@@ -4,9 +4,14 @@ import { useStakeContract } from '@/hooks/useContract';
 import { cn } from '@/utils/cn';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { motion } from 'framer-motion';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FiArrowUp, FiClock, FiInfo } from 'react-icons/fi';
-import { useAccount } from 'wagmi';
+import { toast } from 'react-toastify';
+import { formatUnits, parseUnits } from 'viem';
+import { waitForTransactionReceipt } from 'viem/actions';
+import { useAccount, useWalletClient } from 'wagmi';
+
+const Pid = BigInt(0);
 
 export type UserStakeData = {
   staked: string;
@@ -35,20 +40,84 @@ export default function WithdrawPage() {
   const [amount, setAmount] = useState('');
   const [unstakeLoading, setUnstakeLoading] = useState(false);
   const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const { data } = useWalletClient();
   const [userData, setUserData] = useState<UserStakeData>(InitData);
 
   const isWithdrawable = useMemo(() => Number(userData.withdrawable) > 0 && isConnected, [userData, isConnected]);
 
-  const handleAmountChange = () => {};
+  const getUserData = useCallback(async () => {
+    if (!stakeContract || !address) return;
+    const staked = await stakeContract.read.stakingBalance([Pid, address]);
+    const [requestAmount, pendingWithdrawAmount] = await stakeContract.read.withdrawAmount([Pid, address]);
+    const ava = Number(formatUnits(pendingWithdrawAmount, 18));
+    const total = Number(formatUnits(requestAmount, 18));
+    setUserData({
+      staked: formatUnits(staked, 18),
+      withdrawPending: (total - ava).toString(),
+      withdrawable: ava.toString(),
+    });
+  }, [stakeContract, address]);
 
-  const handleUnStake = () => {};
+  useEffect(() => {
+    if (stakeContract && address) {
+      getUserData();
+    }
+  }, [stakeContract, address, getUserData]);
 
-  const handleWithdraw = () => {};
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (/^\d*(\.\d*)?$/.test(val)) {
+      setAmount(val);
+    }
+  };
+
+  const handleUnStake = useCallback(async () => {
+    if (!stakeContract || !data) return;
+    if (!amount || parseFloat(amount) <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+    if (parseFloat(amount) > parseFloat(userData.staked)) {
+      toast.error('Amount cannot be greater than staked amount');
+      return;
+    }
+    try {
+      setUnstakeLoading(true);
+      const tx = await stakeContract.write.unstake(Pid, parseUnits(amount, 18));
+      console.log('stakeContract', stakeContract);
+      console.log('Pid', Pid);
+      await waitForTransactionReceipt(data, { hash: tx });
+      toast.success('Unstake successful!');
+      setAmount('');
+      getUserData();
+    } catch (error) {
+      toast.error('Transaction failed. Please try again.');
+      console.log(error, 'stake-error');
+    } finally {
+      setUnstakeLoading(false);
+    }
+  }, [stakeContract, data, amount, userData.staked, getUserData]);
+
+  const handleWithdraw = useCallback(async () => {
+    if (!stakeContract || !data) return;
+    try {
+      setWithdrawLoading(true);
+      const tx = await stakeContract.write.withdraw(Pid);
+      await waitForTransactionReceipt(data, { hash: tx });
+      toast.success('Withdraw successful!');
+      getUserData();
+    } catch (error) {
+      toast.error('Transaction failed. Please try again.');
+      console.log(error, 'stake-error');
+    } finally {
+      setWithdrawLoading(false);
+    }
+  }, [stakeContract, data, getUserData]);
 
   return (
     <div className="w-full max-w-4xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center mb-12">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent mb-4">Withdraw</h1>
+        <h1 className="text-4xl font-bold bg-linear-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent mb-4">Withdraw</h1>
         <p className="text-gray-600 text-lg">Unstake and withdraw your ETH</p>
       </motion.div>
 
