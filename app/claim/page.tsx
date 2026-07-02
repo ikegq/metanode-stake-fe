@@ -12,8 +12,7 @@ import { useAccount, useWalletClient } from 'wagmi';
 import { useStakeContract } from '@/hooks/useContract';
 import { toast } from 'react-toastify';
 import { waitForTransactionReceipt } from 'viem/actions';
-
-const Pid = BigInt(0);
+import { Pid } from '@/utils';
 
 export default function ClaimPage() {
   const stakeContract = useStakeContract();

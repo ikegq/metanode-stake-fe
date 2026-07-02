@@ -4,8 +4,7 @@ import { useAccount } from "wagmi";
 import { retryWithDelay } from "@/utils/retry";
 import { formatUnits } from "viem";
 import { addMetaNodeToMetaMask } from "@/utils/metamask";
-
-const Pid = BigInt(0);
+import { Pid } from "@/utils";
 
 export type RewardsData = {
   pendingReward: string;

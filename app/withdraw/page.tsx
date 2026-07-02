@@ -1,6 +1,7 @@
 'use client';
 
 import { useStakeContract } from '@/hooks/useContract';
+import { Pid } from '@/utils';
 import { cn } from '@/utils/cn';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { motion } from 'framer-motion';
@@ -10,8 +11,6 @@ import { toast } from 'react-toastify';
 import { formatUnits, parseUnits } from 'viem';
 import { waitForTransactionReceipt } from 'viem/actions';
 import { useAccount, useWalletClient } from 'wagmi';
-
-const Pid = BigInt(0);
 
 export type UserStakeData = {
   staked: string;
@@ -83,7 +82,7 @@ export default function WithdrawPage() {
     }
     try {
       setUnstakeLoading(true);
-      const tx = await stakeContract.write.unstake(Pid, parseUnits(amount, 18));
+      const tx = await stakeContract.write.unstake([Pid, parseUnits(amount, 18)]);
       console.log('stakeContract', stakeContract);
       console.log('Pid', Pid);
       await waitForTransactionReceipt(data, { hash: tx });
@@ -102,7 +101,7 @@ export default function WithdrawPage() {
     if (!stakeContract || !data) return;
     try {
       setWithdrawLoading(true);
-      const tx = await stakeContract.write.withdraw(Pid);
+      const tx = await stakeContract.write.withdraw([Pid]);
       await waitForTransactionReceipt(data, { hash: tx });
       toast.success('Withdraw successful!');
       getUserData();
