@@ -7,7 +7,7 @@ export async function addTokenToMetaMask(tokenData: {
 }) {
   try {
     // 检查是否在浏览器环境且有ethereum对象
-    if (typeof window.ethereum !== 'undefined' || !window.ethereum) {
+    if (typeof window.ethereum === 'undefined' || !window.ethereum) {
       throw new Error('MetaMask未安装或未连接');
     }
 
