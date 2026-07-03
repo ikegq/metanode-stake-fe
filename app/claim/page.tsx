@@ -25,7 +25,7 @@ export default function ClaimPage() {
     if (!stakeContract || !data) return;
     try {
       setClaimLoading(true);
-      const tx = await stakeContract.write.claim([Pid]);
+      const tx = await stakeContract.write.claim([Pid], { account: data.account, chain: data.chain });
       const res = await waitForTransactionReceipt(data, { hash: tx });
       if (res.status == 'success') {
         toast.success('Claim successful!');

@@ -56,7 +56,7 @@ export default function Home() {
       setLoading(true);
 
       if (isEthPool) {
-        const tx = await stakeContract.write.depositETH([], { value: amountWei });
+        const tx = await stakeContract.write.depositETH({ account: data.account, chain: data.chain, value: amountWei });
         const res = await waitForTransactionReceipt(data, { hash: tx });
         if (res.status == 'success') {
           toast.success('Staked successful!');

@@ -58,8 +58,11 @@ export default function WithdrawPage() {
   }, [stakeContract, address]);
 
   useEffect(() => {
+    const fetchData = async () => {
+      await getUserData();
+    };
     if (stakeContract && address) {
-      getUserData();
+      fetchData();
     }
   }, [stakeContract, address, getUserData]);
 
@@ -82,7 +85,7 @@ export default function WithdrawPage() {
     }
     try {
       setUnstakeLoading(true);
-      const tx = await stakeContract.write.unstake([Pid, parseUnits(amount, 18)]);
+      const tx = await stakeContract.write.unstake([Pid, parseUnits(amount, 18)], { account: data.account, chain: data.chain });
       console.log('stakeContract', stakeContract);
       console.log('Pid', Pid);
       await waitForTransactionReceipt(data, { hash: tx });
@@ -101,7 +104,7 @@ export default function WithdrawPage() {
     if (!stakeContract || !data) return;
     try {
       setWithdrawLoading(true);
-      const tx = await stakeContract.write.withdraw([Pid]);
+      const tx = await stakeContract.write.withdraw([Pid], { account: data.account, chain: data.chain });
       await waitForTransactionReceipt(data, { hash: tx });
       toast.success('Withdraw successful!');
       getUserData();

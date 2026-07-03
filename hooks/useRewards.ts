@@ -91,9 +91,15 @@ const useRewards = () => {
 
   // 初始加载
   useEffect(() => {
-    fetchRewardsData();
-    fetchPoolData();
-    fetchMetaNodeAddress();
+    const fetchData = async () => {
+      await fetchRewardsData();
+      await fetchPoolData();
+      await fetchMetaNodeAddress();
+    }
+
+    if (isConnected && address) {
+      fetchData();
+    }
   }, [isConnected, address, fetchRewardsData, fetchPoolData, fetchMetaNodeAddress])
 
 
